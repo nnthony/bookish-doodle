@@ -1,4 +1,8 @@
 # unidad 0
+
+
+- Tabla: PLANILLA
+```
 CREATE TABLE Planilla (
     id_planilla NUMERIC(6) PRIMARY KEY,
     periodo CHAR(9) NOT NULL,
@@ -7,7 +11,10 @@ CREATE TABLE Planilla (
     fechaFinal DATE NOT NULL,
     fechaCalculo DATE,
 );
+```
 
+- Tabla: BOLETA
+```
 CREATE TABLE BOLETA (
     id_boleta NUMERIC(6) PRIMARY KEY
     id_planilla NUMERIC(6) NOT NULL,
@@ -17,14 +24,15 @@ CREATE TABLE BOLETA (
     totalNeto NUMERIC(9,2) NOT NULL, 
     totalAporte NUMERIC(O,2) NOT NULL
 )
+```
 
-
-
-CREATE TABLE CONCEPTONOMINA (
+- Tabla: CONCEPTO_NOMINA
+```
+CREATE TABLE CONCEPTO_NOMINA (
     id_concepto INTEGER(6) PRIMARY KEY,
     nombreConcepto VARCHAR(40) NOT NULL,
     tipoOperacion CHAR(3) CHECK (tipoOperacion IN ('TO1', 'TO2', 'TO3')),
     estadoConcepto CHAR(3) CHECK (estadoConcepto IN ('EC1', 'EC2') ),
     valor NUMERIC(1,2),
 );
-
+```
