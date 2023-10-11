@@ -81,3 +81,28 @@ INSERT INTO CONCEPTO_NOMINA ("id_concepto;nombreConcepto;tipoOperacion;estadoCon
 ('162825;LBS: COMISION AFP;TO1;EC1;'),
 ('162824;LBS: AFP SEGUROS;TO1;EC1;');
 ```
+
+
+TAB:
+| Codigo | tipoOperacion |
+|----------|----------|
+| TO1 | Beneficio |
+| TO2 | Descuento |
+| TO3 | Aporte |
+
+| Codigo | estadoConcepto |
+|----------|----------|
+| EC1 | Activo |
+| EC2 | Inactivo |
+
+| Atributo | Naturaleza  |  Formato  |  Valores validos  |  Unidad  |  Derivada de  |  Descripcion  |  
+|----------|----------|----------|----------|----------|----------|----------|
+| Id_TipoOperacion| INTEGER | 999999 | 6 dígitos | - | - | Identificador único de tipo de operacion|
+| descripcion_TipoOperacion| CHAR(3) | XXX | NOT NULL | - | - | Descripcion de tipo de operacion |
+
+
+| Atributo | Naturaleza  |  Formato  |  Valores validos  |  Unidad  |  Derivada de  |  Descripcion  | 
+|----------|----------|----------|----------|----------|----------|----------|
+| Id_estadoConcepto| INTEGER | 999999 | 6 dígitos | - | - | Identificador único de estado del concepto|
+| descripcion_estadoConcepto| CHAR(3) | XXX | NOT NULL | - | - | Descripcion del estado de concepto|
+
