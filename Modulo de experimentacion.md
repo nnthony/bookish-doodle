@@ -38,6 +38,8 @@ CREATE TABLE CONCEPTO_NOMINA (
 ```
 
 
+
+```
 CREATE TABLE "mytable" (
   "id_concepto ;nombreConcepto;tipoOperacion;estadoConcepto;valor" text
 );
@@ -78,3 +80,4 @@ INSERT INTO CONCEPTO_NOMINA ("id_concepto;nombreConcepto;tipoOperacion;estadoCon
 ('162826;LBS: APORTE AFP;TO1;EC1;'),
 ('162825;LBS: COMISION AFP;TO1;EC1;'),
 ('162824;LBS: AFP SEGUROS;TO1;EC1;');
+```
