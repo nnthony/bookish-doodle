@@ -1,4 +1,4 @@
-## Proceso: Calculo de planilla
+### Proceso: Calculo de planilla
 
 1. Se realizará el calculo de una planilla que aun no haya generado sus pagos, el sistema puede identificar cuales son con este query:
 ```
