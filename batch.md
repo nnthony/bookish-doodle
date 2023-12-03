@@ -17,13 +17,15 @@ WHERE co.fecha_inicio_laboral <= (SELECT fecha_inicio FROM planilla WHERE id_pla
   AND co.id_cargo = ca.id_cargo
 -- 1: id de planilla
 ```
-3. Para empezar con el cálculo de planilla, el sistema generará boletas con valores en blanco, es decir, los valores en total neto, total ingresos, etc, estarán en 0. Esto se llevará a cabo con el siguiente código en lenguaje plpsql:
+3. Para empezar con el cálculo de planilla, el sistema generará boletas con valores en blanco, es decir, los valores en total neto, total ingresos, etc, serán en 0. En esencia, se necesita realizar *inserts* en la tabla boleta considerando algunos parametros, esto se llevará a cabo con el siguiente código en lenguaje plpsql:
 ```
 CREATE OR REPLACE FUNCTION crear_boletas(planilla_id integer)
 RETURNS VOID AS 
 $$
 DECLARE
     fila_contrato RECORD;
+    primer_id_boleta INT;
+    ultimo_id_boleta INT;
 BEGIN
     FOR fila_contrato IN 
         SELECT e.id_empleado,co.id_contrato,e.nombre  
@@ -35,26 +37,36 @@ BEGIN
             AND co.id_frecuencia_pago = fp.id_frecuencia_pago
     LOOP
         INSERT INTO Boleta (id_boleta, TotalDescuentos, TotalNeto, TotalIngresos, TotalAportes, id_contrato, id_planilla)
-        VALUES (nextval('boleta_nuevo_id_seq1'::regclass),0, 0, 0, 0, fila_contrato.id_contrato, planilla_id);
+        VALUES (nextval('boleta_nuevo_id_seq1'::regclass),0, 0, 0, 0, fila_contrato.id_contrato, planilla_id)
+        RETURNING id_boleta INTO ultimo_id_boleta;
+        IF NOT FOUND THEN
+            CONTINUE;
+        END IF;
+
+        IF primer_id_boleta IS NULL THEN
+            primer_id_boleta := ultimo_id_boleta;
+        END IF;
         
     END LOOP;
-	
+
+    IF primer_id_boleta IS NOT NULL AND ultimo_id_boleta IS NOT NULL THEN
+        PERFORM modificar_boletas_consecutivas(primer_id_boleta, ultimo_id_boleta);
+    END IF;
 END;
 $$
 LANGUAGE plpgsql;
 ```
-&nbsp; &nbsp; &nbsp; &nbsp; Este código crea una función que tiene como variable de entrada el *id_planilla* de la planilla que se quiere pagar. Con esta función se crea las boletas, en base a la *frecuencia_pago*, *fecha_inicio_laboral* y *fecha_termino_contrato* del contrato y la *periodicidad*, *fecha_inicio* y *fecha_fin* de la planilla. Se crea una fila a partir de un query, en esta fila se obtiene todos los contratos de los empleados a los que se les debe pagar por esta planilla, por eso este query similar al anterior. Una vez ejecutada esta función se tendran todas las nuevas boletas.
+&nbsp; &nbsp; &nbsp; &nbsp; Este código crea una función que tiene como variable de entrada el *id_planilla* de la planilla que se quiere pagar. Con esta función se crea las boletas, en base a la *frecuencia_pago*, *fecha_inicio_laboral* y *fecha_termino_contrato* del contrato y la *periodicidad*, *fecha_inicio* y *fecha_fin* de la planilla. Se crea una fila a partir de un query, en esta fila se obtiene todos los contratos de los empleados a los que se les debe pagar por esta planilla, por eso este query es similar al anterior. Una vez ejecutada esta función se tendran todas las nuevas boletas.
 
+&nbsp; &nbsp; &nbsp; &nbsp; El código tambien almacena el primer y último *id_boleta* que se insertó, los guarda en *primer_id_boleta* y *ultimo_id_boleta* respectivamente. Lo que hace es que en cada iteración el valor *ultimo_id_boleta* se actualiza al valor del *id_boleta* de la iteración actual y *primer_id_boleta* se actualiza solo en la primera iteración, ya que tiene un condicional de si es *NULL*. Despues se invoca a la siguiente funcion que permitirá actualizar los valores de la boletas.
 
 4. Ahora se comenzará con los calculos en sí, se usará el siguiente código en lenguaje plpgsql para sumar todos los movimientos de planilla y trasladarlos a los atributos de la fila boleta correspondiente:
 ```
-CREATE OR REPLACE FUNCTION modificar_boletas_consecutivas() RETURNS VOID AS $$
+CREATE OR REPLACE FUNCTION modificar_boletas_consecutivas(primer_id_boleta integer, ultimo_id_boleta integer) RETURNS VOID AS $$
 DECLARE
-    id_inicio INT := 1853;
-    id_fin INT := 1877;
     curr_id INT;
 BEGIN
-    FOR curr_id IN id_inicio..id_fin LOOP
+    FOR curr_id IN primer_id_boleta..ultimo_id_boleta LOOP
         UPDATE Boleta
         SET TotalDescuentos = (SELECT COALESCE(SUM(mp.monto), 0)
                                FROM Movimiento_planilla mp
@@ -103,4 +115,7 @@ $$ LANGUAGE PLPGSQL;
 - id_tipo_operacion = 1, se suma en *totalingresos*
 - id_tipo_operacion = 2, se suma en *totaldescuentos*
 - id_tipo_operacion = 3, se suma en *totalaportes*
-Luego se resta *totalingresos* menos *totaldescuentos* y se almacena en *totalneto*, finalmente fuera del bucle se actualiza los atributos *fecha_calculo* y *monto_emitido* de la planilla, *fecha_calculo* con un *current_date* y *monto_emitido* con un *SELECT SUM()* de los totales netos de las nuevas boletas de la planilla
+
+&nbsp; &nbsp; &nbsp; &nbsp; Luego se resta *totalingresos* menos *totaldescuentos* y se almacena en *totalneto*
+
+&nbsp; &nbsp; &nbsp; &nbsp; Finalmente fuera del bucle se actualiza los atributos *fecha_calculo* y *monto_emitido* de la planilla, *fecha_calculo* con un *current_date* y *monto_emitido* con un *SELECT SUM()* de los totales netos de las nuevas boletas de la planilla
